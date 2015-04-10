@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Mithril Search Box</title>
+    </head>
+    <style>
+    </style>
+    <body>
+        <h3>Search Box</h3>
+        <div id="search_box"></div>
+    </body>
+
+    <script src="mithril.min.js"></script>
+        <script>
+          function getDist(a, b){
+            if(a.length == 0) return b.length; 
+            if(b.length == 0) return a.length; 
+           
+            var matrix = [];
+          
+            var i;
+            for(i = 0; i <= b.length; i++){
+              matrix[i] = [i];
+            }
+           
+            var j;
+            for(j = 0; j <= a.length; j++){
+              matrix[0][j] = j;
+            }
+           
+           
+            for(i = 1; i <= b.length; i++){
+              for(j = 1; j <= a.length; j++){
+                if(b.charAt(i-1) == a.charAt(j-1)){
+                  matrix[i][j] = matrix[i-1][j-1];
+                } else {
+                  matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+                                          Math.min(matrix[i][j-1] + 1, // insertion
+                                                   matrix[i-1][j] + 1)); // deletion
+                }
+              }
+            }
+           
+            return matrix[b.length][a.length];
+          };
+
+          var wordlist=['abhishek','shi','abhi','shek','neha','jain','iiitd','twenty'];  //array to be searched for suggestions
+
+          var search_box={};
+
+          function custom_compare (a,b) {
+            return a.value - b.value;
+          }
+
+
+          search_box.controller=function(){
+            this.get_suggestions=function(word){
+              this.entered_word=word;
+              if(word===""){
+                this.suggestions=[];
+              }
+              else{
+                var temp = new Array();
+                for (var i = 0; i < wordlist.length; i++) {
+                  if(word.length<=wordlist[i].length){
+                    var d=getDist(word,wordlist[i]);
+                    if(word.length <= 3 || d<=word.length) //words pushed into suggestions if they are small or have edit distance comparable to length of given word
+                      temp.push({name:wordlist[i],value:d});  
+                  }
+                }
+                temp.sort(custom_compare);       //suggestions sorted according to their edit distance
+                /*console.log("-----------");
+                for (var i=0;i<temp.length && i<5;i++) { 
+                  console.log(temp[i].name+" "+temp[i].value);
+                }*/
+                this.suggestions=[];
+                for (var i = 0; i < temp.length && i<5; i++) {
+                  this.suggestions.push(" " + temp[i].name);
+                };
+              }
+            }.bind(this)          
+            this.get_suggestions("")
+          }
+        
+
+          search_box.view = function(word) {
+            return [
+              m('label','Type a word : '),
+              m("input", {
+                  oninput: m.withAttr("value", word.get_suggestions),
+                  value: word.entered_word
+              }),
+              m('d'," Suggestions : " + word.suggestions),
+            ]
+          }
+          m.module(document.getElementById('search_box'), search_box);
+    </script>
+</html>
